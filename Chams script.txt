@@ -1,0 +1,44 @@
+local playersService = game:FindFirstChild("Players") or game:GetService("Players")
+if not playersService then
+    warn("Players service could not be found.")
+    return
+end
+for _, v in pairs(game:GetService("CoreGui"):GetChildren()) do
+    if v.Name == "Chams" then
+        v:Destroy()
+    end
+end
+local chamsFolder = Instance.new("Folder")
+chamsFolder.Name = "Chams"
+chamsFolder.Parent = game:GetService("CoreGui")
+local function applyChamsToCharacter(character, player)
+    if not character then return end
+    if character:FindFirstChild("ChamHighlight") then return end
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "ChamHighlight"
+    highlight.Adornee = character
+    highlight.FillColor = Color3.new(1, 0, 0) 
+    highlight.OutlineColor = Color3.new(1, 0, 0) 
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop 
+    highlight.Parent = chamsFolder
+    character.AncestryChanged:Connect(function()
+        if not character:IsDescendantOf(game) then
+            highlight:Destroy()
+        end
+    end)
+end
+local function applyChams(player)
+    if player == playersService.LocalPlayer then return end
+    if player.Character then
+        applyChamsToCharacter(player.Character, player)
+    end
+    player.CharacterAdded:Connect(function(character)
+        applyChamsToCharacter(character, player)
+    end)
+end
+for _, player in pairs(playersService:GetPlayers()) do
+    applyChams(player)
+end
+playersService.PlayerAdded:Connect(function(player)
+    applyChams(player)
+end)
