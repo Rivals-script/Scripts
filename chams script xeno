@@ -1,0 +1,67 @@
+local playersService = game:GetService("Players")
+
+local function clearOldChams()
+    for _, v in pairs(game:GetService("Players").LocalPlayer.PlayerGui:GetChildren()) do
+        if v.Name == "Chams" then
+            v:Destroy()
+        end
+    end
+end
+
+local function createChamsFolder()
+    local chamsFolder = Instance.new("Folder")
+    chamsFolder.Name = "Chams"
+    chamsFolder.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+    return chamsFolder
+end
+
+local function applyChamsToCharacter(character, player, chamsFolder)
+    if not character then return end
+    if character:FindFirstChild("ChamHighlight") then return end
+
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "ChamHighlight"
+    highlight.Adornee = character:FindFirstChild("HumanoidRootPart") or character.PrimaryPart
+    highlight.FillColor = Color3.new(1, 0, 0)
+    highlight.OutlineColor = Color3.new(1, 0, 0)
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Parent = chamsFolder
+
+    character.AncestryChanged:Connect(function()
+        if not character:IsDescendantOf(game) then
+            highlight:Destroy()
+        end
+    end)
+end
+
+local function applyChams(player, chamsFolder)
+    if player == playersService.LocalPlayer then return end
+    if player.Character then
+        applyChamsToCharacter(player.Character, player, chamsFolder)
+    end
+    player.CharacterAdded:Connect(function(character)
+        applyChamsToCharacter(character, player, chamsFolder)
+    end)
+end
+
+local function reapplyChams()
+    clearOldChams()
+    local chamsFolder = createChamsFolder()
+
+    for _, player in pairs(playersService:GetPlayers()) do
+        applyChams(player, chamsFolder)
+    end
+
+    playersService.PlayerAdded:Connect(function(player)
+        applyChams(player, chamsFolder)
+    end)
+end
+
+-- Initial application
+reapplyChams()
+
+-- Reexecution every 5 seconds
+while true do
+    task.wait(5) -- Wait for 5 seconds
+    reapplyChams()
+end
