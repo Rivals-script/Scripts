@@ -1,44 +1,64 @@
-local playersService = game:FindFirstChild("Players") or game:GetService("Players")
-if not playersService then
-    warn("Players service could not be found.")
+local playersService = game:GetService("Players")
+local coreGui = game:GetService("CoreGui")
+
+-- Check if Roblox is open (Players.LocalPlayer exists)
+if not playersService.LocalPlayer then
+    warn("Roblox is not open. Script will not run.")
     return
 end
-for _, v in pairs(game:GetService("CoreGui"):GetChildren()) do
-    if v.Name == "Chams" then
-        v:Destroy()
-    end
+
+-- Remove old chams if they exist
+local oldChams = coreGui:FindFirstChild("Chams")
+if oldChams then
+    oldChams:Destroy()
 end
+
+-- Create new Chams folder
 local chamsFolder = Instance.new("Folder")
 chamsFolder.Name = "Chams"
-chamsFolder.Parent = game:GetService("CoreGui")
-local function applyChamsToCharacter(character, player)
+chamsFolder.Parent = coreGui
+
+local function applyChamsToCharacter(character)
     if not character then return end
-    if character:FindFirstChild("ChamHighlight") then return end
+
+    -- Remove old highlights for this character if they exist
+    for _, obj in pairs(chamsFolder:GetChildren()) do
+        if obj.Adornee == character then
+            obj:Destroy()
+        end
+    end
+
+    -- Create new highlight
     local highlight = Instance.new("Highlight")
     highlight.Name = "ChamHighlight"
     highlight.Adornee = character
-    highlight.FillColor = Color3.new(1, 0, 0) 
-    highlight.OutlineColor = Color3.new(1, 0, 0) 
-    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop 
+    highlight.FillColor = Color3.new(1, 0, 0) -- Red fill
+    highlight.OutlineColor = Color3.new(1, 0, 0) -- Red outline
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
     highlight.Parent = chamsFolder
+
+    -- Remove highlight when character is removed from game
     character.AncestryChanged:Connect(function()
         if not character:IsDescendantOf(game) then
             highlight:Destroy()
         end
     end)
 end
+
 local function applyChams(player)
     if player == playersService.LocalPlayer then return end
+
     if player.Character then
-        applyChamsToCharacter(player.Character, player)
+        applyChamsToCharacter(player.Character)
     end
-    player.CharacterAdded:Connect(function(character)
-        applyChamsToCharacter(character, player)
-    end)
+
+    player.CharacterAdded:Connect(applyChamsToCharacter)
 end
+
+-- Apply chams to all existing players
 for _, player in pairs(playersService:GetPlayers()) do
     applyChams(player)
 end
-playersService.PlayerAdded:Connect(function(player)
-    applyChams(player)
-end)
+
+-- Apply chams to new players
+playersService.PlayerAdded:Connect(applyChams)
